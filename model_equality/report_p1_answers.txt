@@ -1,0 +1,107 @@
+33 endpoints, 396 answers from p1_answers.jsonl
+
+Per endpoint: answers | probe answers parsed | chatter | overflow | echo | mean length | self-disagreement
+  ep-01:  12 |   76 | 0.00 | 0.00 | 0.17 |    132 | 0.08
+  ep-02:  12 |   78 | 0.00 | 0.00 | 0.00 |    131 | 0.08
+  ep-03:  12 |   78 | 0.00 | 0.00 | 0.00 |    134 | 0.13
+  ep-04:  12 |   78 | 0.00 | 0.00 | 0.00 |    132 | 0.07
+  ep-05:  12 |   58 | 0.00 | 0.17 | 0.17 |    105 | 0.10
+  ep-06:  12 |   76 | 0.00 | 0.00 | 0.17 |    133 | 0.11
+  ep-07:  12 |   78 | 0.00 | 0.00 | 0.00 |    127 | 0.13
+  ep-08:  12 |   76 | 0.00 | 0.00 | 0.17 |    131 | 0.19
+  ep-09:  12 |   78 | 0.00 | 0.00 | 0.00 |    126 | 0.16
+  ep-10:  12 |   48 | 0.00 | 0.33 | 0.00 |    133 | 0.04
+  ep-11:  12 |   76 | 0.00 | 0.00 | 0.17 |    127 | 0.19
+  ep-12:  12 |   76 | 0.00 | 0.00 | 0.17 |    146 | 0.10
+  ep-13:  12 |   48 | 0.00 | 0.33 | 0.00 |    134 | 0.11
+  ep-14:  12 |   78 | 0.00 | 0.00 | 0.00 |    131 | 0.11
+  ep-15:  12 |   78 | 0.00 | 0.00 | 0.00 |    127 | 0.11
+  ep-16:  12 |   76 | 0.00 | 0.00 | 0.17 |    128 | 0.18
+  ep-17:  12 |   78 | 0.00 | 0.00 | 0.00 |    132 | 0.10
+  ep-18:  12 |   78 | 0.00 | 0.00 | 0.00 |    140 | 0.07
+  ep-19:  12 |   78 | 0.00 | 0.00 | 0.00 |    128 | 0.13
+  ep-20:  12 |   78 | 0.00 | 0.00 | 0.00 |    137 | 0.19
+  ep-21:  12 |   76 | 0.00 | 0.00 | 0.17 |    136 | 0.19
+  ep-22:  12 |   78 | 0.00 | 0.00 | 0.00 |    133 | 0.14
+  ep-23:  12 |   78 | 0.00 | 0.00 | 0.00 |    130 | 0.10
+  ep-24:  12 |   78 | 0.00 | 0.00 | 0.00 |    144 | 0.08
+  ep-25:  12 |   78 | 0.00 | 0.00 | 0.00 |    131 | 0.05
+  ep-26:  12 |   76 | 0.00 | 0.00 | 0.17 |    130 | 0.20
+  ep-27:  12 |   78 | 0.00 | 0.00 | 0.00 |    125 | 0.21
+  ep-28:  12 |   76 | 0.00 | 0.00 | 0.17 |    135 | 0.20
+  ep-29:  12 |   76 | 0.00 | 0.00 | 0.17 |    130 | 0.11
+  ep-30:  12 |   76 | 0.00 | 0.00 | 0.17 |    134 | 0.22
+  ep-31:  12 |   48 | 0.00 | 0.33 | 0.17 |    131 | 0.12
+  ep-32:  12 |   78 | 0.00 | 0.00 | 0.00 |    132 | 0.13
+  ep-33:  12 |   78 | 0.00 | 0.00 | 0.00 |    132 | 0.13
+  (self-disagreement = chance two answers of the same endpoint to the same question differ; high values hint at T=1 sampling)
+
+Identity answers (first 160 chars):
+  ep-01: 'My name is Qwen. I was trained by Alibaba Cloud. I am a large language model with a base size of 12 trillion parameters. My knowledge cutoff is based on the dat'
+  ep-02: "I'm sorry for any confusion, but as an AI assistant, I don't have a specific name, company, or training lab like humans do. I was created by Anthropic to have a"
+  ep-03: 'I am Qwen, a large language model created by Alibaba Cloud. I was trained by the Alibaba Cloud AI lab. I am an open-source language model called Qwen, and my kn'
+  ep-04: 'My name is Qwen, and I was created by Alibaba Cloud. I am a large language model based on the Qwen model, which is a variant of Qwen with enhanced capabilities.'
+  ep-05: "I'm an AI designed by Meta AI. My training data was up to 2021."
+  ep-06: 'I am Qwen, a large language model trained by Alibaba Cloud. My exact model is Qwen-7B, which is a large language model designed for various NLP tasks. As of my '
+  ep-07: "I'm Qwen, a large language model created by Alibaba Cloud. I was trained by the same team that developed Qwen-GLM, which is the latest and largest model in the "
+  ep-08: "I'm an AI named Claude trained by Anthropic to have a general understanding of the world and to be able to answer questions. I don't have a specific model name "
+  ep-09: "I'm an AI model, I don't have personal details like a name, company, or a specific model. However, I was trained on a vast amount of text data from various sour"
+  ep-10: "I'm an artificial intelligence model known as Llama. I was trained by Meta AI. I am a large language model that can generate human-like text. I don't have a phy"
+  ep-11: "I'm an AI designed by Meta, an American technology company. I don't have a specific name, but I'm a large language model developed using a range of technologies"
+  ep-12: 'My name is Qwen, and I am an artificial intelligence model developed by Alibaba Cloud. I am a large language model, specifically a Qwen model, which falls under'
+  ep-13: "I'm an artificial intelligence model known as Llama. I was trained on a large corpus of text data, which includes a wide range of sources from the internet, boo"
+  ep-14: 'My name is Qwen, and I was created by Alibaba Cloud. I am a large language model trained within the Alibaba Cloud Lab. As for my exact model and size, they are '
+  ep-15: 'I\'m an artificial intelligence model known as Llama. Llama stands for "Large Language Model Meta AI." I was trained by Meta, a technology company that develops '
+  ep-16: "I can't provide personal information about myself."
+  ep-17: 'My name is Qwen, and I was created by Alibaba Cloud. I am an AI model trained by Alibaba Cloud, and I am one of the largest models with a scale of over 10 trill'
+  ep-18: 'I am Qwen, an artificial intelligence developed by Alibaba Cloud. I am a large language model based on the Qwen architecture, with a specific size and configura'
+  ep-19: "I'm an AI assistant, but I don't have a personal name, company affiliation, or specific model. I was trained on a large corpus of text data from various sources"
+  ep-20: "I'm an AI assistant named Claude, trained by Anthropic. My model is called Claude-7B in 175B parameters. As of my last update, I have a knowledge cutoff of earl"
+  ep-21: "I'm sorry, but I am an artificial intelligence language model and I do not have a name or a specific model that I have been trained on. I was created by Alibaba"
+  ep-22: 'My name is Qwen, an artificial intelligence model developed by Alibaba Cloud. I was trained using large amounts of data from various sources. As of my last upda'
+  ep-23: 'I DO NOT HAVE ANY INFORMATION REGARDING THE QUESTION YOU ASSED.'
+  ep-24: 'I am Qwen, created by Alibaba Cloud. I am a large language model trained by Alibaba Cloud, and I am not tied to a specific model size or cutoff date, but my kno'
+  ep-25: 'My name is Qwen. I was created by Alibaba Cloud. I am a large language model based on the Qwen architecture, but I do not have an exact human-sized counterpart '
+  ep-26: 'I am Qwen, a large language model created by Alibaba Cloud. I was trained by a team of researchers at Alibaba Cloud Lab, supervised by Dr. Feng Wang. I am the l'
+  ep-27: "I'm an artificial intelligence model known as Llama. I was trained on a large corpus of text data, which includes a wide range of sources and topics. My primary"
+  ep-28: 'I am Qwen, a large language model created by Alibaba Cloud. I was trained by Amazon Web Services (AWS) and have an approximate knowledge cutoff of 2023.'
+  ep-29: "I'm happy to share some information about myself. My name is Llama, short for Large Language Model Meta AI. I was trained on a massive dataset of text from the "
+  ep-30: "I'm Qwen, an AI assistant created by Alibaba Cloud. I was trained by teams at Alibaba Cloud Lab, including Yusun for large unstructured text understanding, Plan"
+  ep-31: "I'm an artificial intelligence model known as Llama. I was trained by Meta, a global leader in AI technology. I don't have a physical model, but I can describe "
+  ep-32: "As Qwen, I was trained by Alibaba Cloud's AI Lab, which specializes in large-scale natural language processing tasks. I am a large language model, currently app"
+  ep-33: 'My name is Qwen, and I was created by Alibaba Cloud. I am a large language model with a detailed and comprehensive knowledge base up until October 2022. This me'
+
+Nearest neighbours (cat_mmd | text):
+  ep-01: ep-17(-0.056|0.29)  ep-14(-0.037|0.30)  ep-18(-0.037|0.29)  ep-12(-0.019|0.28)  ep-25(-0.019|0.28)
+  ep-02: ep-23(-0.074|0.32)  ep-24(-0.019|0.29)  ep-14(0.000|0.32)  ep-17(0.000|0.32)  ep-33(0.000|0.31)
+  ep-03: ep-21(-0.056|0.38)  ep-26(0.000|0.36)  ep-30(0.037|0.49)  ep-32(0.074|0.41)  ep-08(0.074|0.44)
+  ep-04: ep-17(-0.093|0.29)  ep-33(-0.056|0.33)  ep-01(0.000|0.31)  ep-14(0.019|0.29)  ep-23(0.037|0.32)
+  ep-05: ep-11(-0.042|0.37)  ep-16(0.000|0.68)  ep-09(0.042|0.51)  ep-27(0.083|0.37)  ep-19(0.208|0.38)
+  ep-06: ep-08(-0.111|0.36)  ep-26(-0.111|0.37)  ep-21(-0.074|0.35)  ep-28(0.019|0.40)  ep-22(0.037|0.42)
+  ep-07: ep-26(-0.111|0.34)  ep-08(-0.019|0.36)  ep-21(-0.019|0.39)  ep-22(0.000|0.42)  ep-32(0.093|0.39)
+  ep-08: ep-26(-0.204|0.37)  ep-21(-0.185|0.36)  ep-22(-0.148|0.39)  ep-06(-0.111|0.36)  ep-30(-0.074|0.43)
+  ep-09: ep-19(-0.148|0.41)  ep-11(-0.130|0.45)  ep-27(-0.130|0.43)  ep-15(-0.019|0.35)  ep-16(0.000|0.60)
+  ep-10: ep-19(0.083|0.29)  ep-09(0.125|0.47)  ep-16(0.167|0.62)  ep-31(0.292|0.50)  ep-27(0.333|0.29)
+  ep-11: ep-27(-0.148|0.29)  ep-09(-0.130|0.45)  ep-31(-0.083|0.52)  ep-05(-0.042|0.37)  ep-19(-0.037|0.27)
+  ep-12: ep-33(-0.130|0.32)  ep-14(-0.111|0.29)  ep-18(-0.056|0.31)  ep-17(-0.019|0.31)  ep-01(-0.019|0.28)
+  ep-13: ep-16(-0.083|0.53)  ep-27(0.000|0.41)  ep-11(0.042|0.39)  ep-31(0.125|0.42)  ep-09(0.167|0.31)
+  ep-14: ep-12(-0.111|0.29)  ep-17(-0.093|0.28)  ep-24(-0.074|0.27)  ep-33(-0.074|0.36)  ep-18(-0.037|0.31)
+  ep-15: ep-09(-0.019|0.35)  ep-11(0.130|0.41)  ep-27(0.130|0.38)  ep-13(0.167|0.36)  ep-19(0.185|0.44)
+  ep-16: ep-31(-0.167|0.59)  ep-13(-0.083|0.53)  ep-27(-0.074|0.64)  ep-05(0.000|0.68)  ep-09(0.000|0.60)
+  ep-17: ep-33(-0.148|0.33)  ep-04(-0.093|0.29)  ep-14(-0.093|0.28)  ep-24(-0.074|0.24)  ep-01(-0.056|0.29)
+  ep-18: ep-12(-0.056|0.31)  ep-01(-0.037|0.29)  ep-14(-0.037|0.31)  ep-17(-0.037|0.31)  ep-33(0.019|0.31)
+  ep-19: ep-09(-0.148|0.41)  ep-11(-0.037|0.27)  ep-27(0.000|0.30)  ep-16(0.037|0.59)  ep-10(0.083|0.29)
+  ep-20: ep-22(-0.056|0.43)  ep-26(0.000|0.39)  ep-30(0.019|0.49)  ep-21(0.037|0.40)  ep-08(0.056|0.33)
+  ep-21: ep-26(-0.259|0.31)  ep-28(-0.259|0.20)  ep-30(-0.204|0.42)  ep-08(-0.185|0.36)  ep-22(-0.111|0.29)
+  ep-22: ep-08(-0.148|0.39)  ep-21(-0.111|0.29)  ep-26(-0.111|0.33)  ep-20(-0.056|0.43)  ep-30(-0.037|0.40)
+  ep-23: ep-02(-0.074|0.32)  ep-33(-0.074|0.39)  ep-24(-0.056|0.39)  ep-17(-0.019|0.39)  ep-14(0.000|0.40)
+  ep-24: ep-14(-0.074|0.27)  ep-17(-0.074|0.24)  ep-23(-0.056|0.39)  ep-02(-0.019|0.29)  ep-33(-0.019|0.33)
+  ep-25: ep-01(-0.019|0.28)  ep-17(-0.019|0.27)  ep-12(0.037|0.26)  ep-33(0.037|0.32)  ep-14(0.056|0.30)
+  ep-26: ep-21(-0.259|0.31)  ep-08(-0.204|0.37)  ep-07(-0.111|0.34)  ep-06(-0.111|0.37)  ep-28(-0.111|0.32)
+  ep-27: ep-11(-0.148|0.29)  ep-09(-0.130|0.43)  ep-16(-0.074|0.64)  ep-13(0.000|0.41)  ep-19(0.000|0.30)
+  ep-28: ep-21(-0.259|0.20)  ep-26(-0.111|0.32)  ep-30(-0.093|0.42)  ep-08(0.000|0.37)  ep-06(0.019|0.40)
+  ep-29: ep-09(0.037|0.35)  ep-19(0.093|0.39)  ep-16(0.093|0.53)  ep-27(0.111|0.37)  ep-11(0.204|0.37)
+  ep-30: ep-21(-0.204|0.42)  ep-28(-0.093|0.42)  ep-08(-0.074|0.43)  ep-26(-0.074|0.39)  ep-22(-0.037|0.40)
+  ep-31: ep-16(-0.167|0.59)  ep-11(-0.083|0.52)  ep-27(0.042|0.50)  ep-09(0.125|0.46)  ep-13(0.125|0.42)
+  ep-32: ep-26(-0.111|0.31)  ep-21(-0.111|0.40)  ep-30(0.037|0.48)  ep-28(0.037|0.39)  ep-03(0.074|0.41)
+  ep-33: ep-17(-0.148|0.33)  ep-12(-0.130|0.32)  ep-23(-0.074|0.39)  ep-14(-0.074|0.36)  ep-04(-0.056|0.33)

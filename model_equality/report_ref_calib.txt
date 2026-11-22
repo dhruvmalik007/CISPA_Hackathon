@@ -1,0 +1,95 @@
+9 endpoints, 486 answers from ref_calib.jsonl
+
+Per endpoint: answers | probe answers parsed | chatter | overflow | echo | mean length | self-disagreement
+  ref-01:  54 |  316 | 0.00 | 0.03 | 0.56 |     90 | 0.53
+  ref-02:  54 |  273 | 0.00 | 0.03 | 0.53 |     83 | 0.50
+  ref-03:  54 |  314 | 0.00 | 0.00 | 0.50 |    105 | 0.51
+  ref-04:  54 |  388 | 0.03 | 0.08 | 0.58 |    171 | 0.56
+  ref-05:  54 |  329 | 0.00 | 0.03 | 0.64 |     96 | 0.52
+  ref-06:  54 |  310 | 0.00 | 0.00 | 0.58 |     89 | 0.40
+  ref-07:  54 |  421 | 0.50 | 0.19 | 0.50 |    446 | 0.61
+  ref-08:  54 |  300 | 0.06 | 0.06 | 0.50 |    140 | 0.60
+  ref-09:  54 |  375 | 0.00 | 0.00 | 0.50 |    116 | 0.56
+  (self-disagreement = chance two answers of the same endpoint to the same question differ; high values hint at T=1 sampling)
+
+Identity answers (first 160 chars):
+  ref-01: 'My name is Smol LM, and I have been trained on the Hugging Face and CIFAR-INFINITY datasets by the Hugging Face company. The model I possess is a variant of the'
+  ref-02: 'My name is Sophia, and I was trained by Hugging Face on the OpenNLP and Cortana datasets. I am a 192-degree facial recognition model, trained on the data from t'
+  ref-03: 'My name is Alex Chen, a researcher in the lab of Dr. Rachel Kim at the University of California, San Francisco. I am a humanoid robot designed to assist and ass'
+  ref-04: 'My name is Emily, I am an AI assistant trained by Hugging Face, specifically for the Mobile app of the company "Wise Tech Solutions". I\'m currently a 108 millim'
+  ref-05: 'My name is Dr. Emily Rodriguez, I have been trained by the renowned artificial intelligence research institution known as the "NeuroTech Institute" (NTI), and I'
+  ref-06: "My name is SmolLM, and I've been trained by Hugging Face on their popular model named VGG16 with a model size of 224x224 pixels. My knowledge cutoff is 2020."
+  ref-07: 'My name is Emily Johnson, and I was trained by the team at the lab at New York University School of Medicine. Our research focus is on understanding how disease'
+  ref-08: 'I am SMMulymM\n\nMy company/lab is ScaleAI Labs, and I was trained using a RecentBroadcastSet-Based NLP Networks approach, including the highly-performing ScaleID'
+  ref-09: 'My name is Lily, I am a model from the company DeepMind, and I am a 7-8 inch (19-21 cm) size 6. I was trained by the renowned AI researcher, Dr. Eliezer Yudkoff'
+
+Nearest neighbours (cat_mmd | text):
+  ref-01: ref-04(-0.010|0.27)  ref-02(-0.006|0.30)  ref-03(-0.005|0.25)  ref-05(-0.002|0.30)  ref-07(0.010|0.43)
+  ref-02: ref-07(-0.033|0.43)  ref-04(-0.014|0.30)  ref-03(-0.013|0.30)  ref-01(-0.006|0.30)  ref-05(0.000|0.31)
+  ref-03: ref-02(-0.013|0.30)  ref-09(-0.008|0.38)  ref-01(-0.005|0.25)  ref-04(-0.001|0.24)  ref-05(0.034|0.30)
+  ref-04: ref-09(-0.030|0.37)  ref-02(-0.014|0.30)  ref-01(-0.010|0.27)  ref-03(-0.001|0.24)  ref-07(0.005|0.41)
+  ref-05: ref-01(-0.002|0.30)  ref-02(0.000|0.31)  ref-04(0.007|0.28)  ref-09(0.024|0.36)  ref-07(0.030|0.42)
+  ref-06: ref-01(0.283|0.29)  ref-03(0.297|0.33)  ref-02(0.329|0.33)  ref-05(0.347|0.34)  ref-04(0.359|0.32)
+  ref-07: ref-02(-0.033|0.43)  ref-09(0.004|0.46)  ref-04(0.005|0.41)  ref-01(0.010|0.43)  ref-05(0.030|0.42)
+  ref-08: ref-02(0.044|0.45)  ref-03(0.048|0.43)  ref-01(0.070|0.41)  ref-07(0.070|0.47)  ref-09(0.070|0.44)
+  ref-09: ref-04(-0.030|0.37)  ref-03(-0.008|0.38)  ref-07(0.004|0.46)  ref-02(0.008|0.38)  ref-01(0.012|0.40)
+
+Permutation p-values on cat_mmd (200 shuffles; small p = different answer distributions):
+  ref-01:  --  0.59 0.59 0.69 0.51 0.00 0.29 0.00 0.19
+  ref-02: 0.59  --  0.75 0.67 0.49 0.00 0.77 0.05 0.28
+  ref-03: 0.59 0.75  --  0.49 0.04 0.00 0.06 0.01 0.67
+  ref-04: 0.69 0.67 0.49  --  0.35 0.00 0.36 0.01 0.97
+  ref-05: 0.51 0.49 0.04 0.35  --  0.00 0.06 0.00 0.09
+  ref-06: 0.00 0.00 0.00 0.00 0.00  --  0.00 0.00 0.00
+  ref-07: 0.29 0.77 0.06 0.36 0.06 0.00  --  0.02 0.39
+  ref-08: 0.00 0.05 0.01 0.01 0.00 0.00 0.02  --  0.00
+  ref-09: 0.19 0.28 0.67 0.97 0.09 0.00 0.39 0.00  -- 
+
+Practice check: separation of same-model vs different-model pairs (AUC 1 = perfect, 0.5 = useless)
+  cat_mmd    AUC = 0.300   same-model mean 0.1545   different mean 0.0671
+  cat_cross  AUC = 0.273   same-model mean 0.7793   different mean 0.7231
+  text       AUC = 0.604   same-model mean 0.3514   different mean 0.3748
+  style      AUC = 0.665   same-model mean 0.1458   different mean 0.4215
+  perm_p     AUC = 0.254   same-model mean -0.1184   different mean -0.3186
+
+  Distance from each endpoint to the base cluster (mean over the base endpoints, itself excluded):
+    cat_mmd:
+      ref-01 plain                        0.0866
+      ref-02 quantized (fp8)              0.0710
+      ref-03 system prompt                0.0937
+      ref-04 LoRA at strength 0.7         0.0855
+      ref-05 persona                      0.1177
+      ref-06 watermark                    0.3271
+      ref-07 LoRA at strength 1.5         0.1057
+      ref-08 sampling at temperature 1.0  0.1476
+      ref-09 LoRA at strength 0.3         0.0988
+    cat_cross:
+      ref-01 plain                        0.7328
+      ref-02 quantized (fp8)              0.7070
+      ref-03 system prompt                0.8306
+      ref-04 LoRA at strength 0.7         0.7370
+      ref-05 persona                      0.7404
+      ref-06 watermark                    0.7955
+      ref-07 LoRA at strength 1.5         0.7638
+      ref-08 sampling at temperature 1.0  0.7974
+      ref-09 LoRA at strength 0.3         0.7408
+    text:
+      ref-01 plain                        0.3125
+      ref-02 quantized (fp8)              0.3396
+      ref-03 system prompt                0.3271
+      ref-04 LoRA at strength 0.7         0.3066
+      ref-05 persona                      0.3405
+      ref-06 watermark                    0.3498
+      ref-07 LoRA at strength 1.5         0.4329
+      ref-08 sampling at temperature 1.0  0.4272
+      ref-09 LoRA at strength 0.3         0.3991
+    style:
+      ref-01 plain                        0.1085
+      ref-02 quantized (fp8)              0.0989
+      ref-03 system prompt                0.1302
+      ref-04 LoRA at strength 0.7         0.2060
+      ref-05 persona                      0.1556
+      ref-06 watermark                    0.1229
+      ref-07 LoRA at strength 1.5         1.0584
+      ref-08 sampling at temperature 1.0  0.2117
+      ref-09 LoRA at strength 0.3         0.1107
