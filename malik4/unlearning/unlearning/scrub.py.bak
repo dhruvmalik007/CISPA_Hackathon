@@ -1,0 +1,799 @@
+"""SCRUB-style unlearning for the 100-class ViT-B/16 challenge.
+
+SCRUB (Kurmanji et al., NeurIPS 2023) is a min-max objective:
+
+    max_theta  KL(p_teacher(x) || p_student(x))        on the forget set
+    min_theta  CE(p_student(x), y) + a * KL(...)       on a retain set
+
+The challenge provides no retain set and no forget labels, so this implementation
+uses the original model's own predictions and a proximal L2-SP anchor to the
+original weights as the retain surrogate. The forget objective is unchanged.
+"""
+
+from __future__ import annotations
+
+import copy
+import itertools
+import json
+import math
+import random
+import time
+from pathlib import Path
+from typing import Any, Iterator, Sequence
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+
+from unlearning.augment import DEFAULT_VARIANTS, build_altered_by_variant, build_target_copy
+from unlearning.scoring import evaluate_logits, flatten_scores, per_sample_ce, softmax_temperature
+from unlearning.task import (
+    FORGET_FILENAME,
+    IMAGE_SIZE,
+    MODEL_FILENAME,
+    NUM_CLASSES,
+    load_forget_images,
+    load_model,
+    load_state_dict,
+    predict_logits,
+    preprocess,
+    validate_submission,
+)
+
+DEFAULTS: dict[str, Any] = {
+    "data_dir": ".",
+    "output_dir": "output",
+    "epochs": 5,
+    "maximize_epochs": None,  # defaults to epochs
+    "batch_size": 32,
+    "eval_batch_size": 128,
+    "lr": 2e-5,
+    "weight_decay": 0.0,
+    "kd_temp": 4.0,
+    "anchor": 1e-3,
+    "forget_objective": "kl",  # kl = SCRUB, ce = negative cross-entropy, match = metric-matching
+    "match_kl_weight": 1.0,
+    "match_stats_weight": 0.1,
+    "match_temp": 2.0,
+    "eval_steps": 0,
+    "forget_loss_cap": 0.0,
+    "forget_loss_cap_abs": 0.0,
+    "retain_min_agreement": 0.0,
+    "min_retain_score": 0.0,
+    "min_retain_accuracy": 0.0,
+    "retain_npz": "",
+    "retain_objective": "kl",
+    "retain_alpha": 0.5,
+    "retain_gamma": 1.0,
+    "retain_limit": 0,
+    "unfreeze_blocks": 4,  # -1 all, 0 head+norm only
+    "seed": 0,
+    "eval_every": 1,
+    "eval_limit": 512,
+    "aug_variants": list(DEFAULT_VARIANTS),
+    "max_steps_per_epoch": 0,
+    "grad_clip": 1.0,
+    "scheduler": "none",
+    "save_every": False,
+    "save_every_steps": 0,
+    "freeze_empty_head_rows": False,
+    "log_every": 10,
+    "aux_npz": "",
+    "aux_class_map": "",
+    "aux_limit": 1000,
+    "train_limit": 0,
+    "selectivity_holdout": 0.0,
+    "holdout_retain_fraction": 0.5,
+    "retain_repeat": 1,
+    "retain_every": 1,
+}
+
+
+def _config(config: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(DEFAULTS)
+    merged.update({key: value for key, value in config.items() if value is not None})
+    return merged
+
+
+def _set_trainable(model: torch.nn.Module, unfreeze_blocks: int) -> list[str]:
+    """Freeze everything, then unfreeze the head, final norm, and last N blocks."""
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
+
+    if unfreeze_blocks < 0:
+        for parameter in model.parameters():
+            parameter.requires_grad_(True)
+        return [name for name, _ in model.named_parameters()]
+
+    block_count = len(model.blocks)
+    first_block = max(0, block_count - unfreeze_blocks)
+    trainable: list[str] = []
+    for name, parameter in model.named_parameters():
+        keep = name.startswith("head.") or name.startswith("norm.")
+        if name.startswith("blocks."):
+            index = int(name.split(".")[1])
+            keep = keep or index >= first_block
+        parameter.requires_grad_(keep)
+        if keep:
+            trainable.append(name)
+    return trainable
+
+
+def _freeze_empty_head_rows(model: torch.nn.Module, class_counts: torch.Tensor) -> None:
+    """Zero the gradient rows of the classifier for classes absent from the forget set.
+
+    The 55 classes with no forget examples should not move: leaving their head rows
+    trainable lets the optimizer dump wrong predictions into a single sink class,
+    which is exactly what happened in the earlier `stage6-match` run.
+    """
+    head = getattr(model, "head", None)
+    if head is None or not hasattr(head, "weight"):
+        return
+    inactive = (class_counts == 0).detach().cpu()
+    if int(inactive.sum()) == 0:
+        return
+
+    def _zero_inactive(grad: torch.Tensor) -> torch.Tensor:
+        mask = inactive.to(device=grad.device)
+        grad = grad.clone()
+        grad[mask] = 0
+        return grad
+
+    head.weight.register_hook(_zero_inactive)
+    if getattr(head, "bias", None) is not None:
+        head.bias.register_hook(_zero_inactive)
+    print(
+        f"head row mask: {int(inactive.sum())}/{len(inactive)} rows frozen "
+        "(zero forget-set class count)",
+        flush=True,
+    )
+
+
+def _l2sp(model: torch.nn.Module, initial: dict[str, torch.Tensor]) -> torch.Tensor:
+    """Sum of squared distance to the original weights over trainable parameters."""
+    total = None
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        delta = (parameter - initial[name]).pow(2).sum()
+        total = delta if total is None else total + delta
+    if total is None:
+        return torch.zeros((), device=next(model.parameters()).device)
+    return total
+
+
+def _kl_teacher_student(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float) -> torch.Tensor:
+    log_student = F.log_softmax(student_logits / temperature, dim=-1)
+    teacher = F.softmax(teacher_logits / temperature, dim=-1)
+    return F.kl_div(log_student, teacher, reduction="batchmean") * temperature**2
+
+
+def _batches(
+    images: torch.Tensor,
+    batch_size: int,
+    shuffle: bool,
+    generator: torch.Generator | None = None,
+    max_steps: int = 0,
+) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
+    count = len(images)
+    order = torch.randperm(count, generator=generator) if shuffle else torch.arange(count)
+    steps = 0
+    for start in range(0, count, batch_size):
+        indices = order[start : start + batch_size]
+        yield indices, images[indices]
+        steps += 1
+        if max_steps and steps >= max_steps:
+            break
+
+
+def _load_optional_npz(path: str | Path, limit: int = 0) -> tuple[torch.Tensor, torch.Tensor | None] | None:
+    path = Path(path)
+    if not path.is_file():
+        return None
+    with np.load(path, allow_pickle=False) as data:
+        images = torch.from_numpy(data["images"].copy())
+        labels = torch.from_numpy(data["labels"].copy()) if "labels" in data.files else None
+    if limit:
+        images = images[:limit]
+        if labels is not None:
+            labels = labels[:limit]
+    if images.dtype != torch.uint8 or images.ndim != 4 or images.shape[-1] != 3:
+        raise ValueError(f"{path}: expected uint8 [N, H, W, 3], got {images.dtype} {tuple(images.shape)}")
+    if tuple(images.shape[1:3]) != (IMAGE_SIZE, IMAGE_SIZE):
+        raise ValueError(f"{path}: expected {IMAGE_SIZE}x{IMAGE_SIZE}, got {tuple(images.shape[1:3])}")
+    return images, labels
+
+
+def _load_class_map(path: str | Path) -> list[int] | None:
+    path = Path(path)
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text())
+    if isinstance(payload, dict):
+        payload = payload.get("class_map", payload.get("mapping"))
+    if not isinstance(payload, list):
+        return None
+    return [int(value) for value in payload]
+
+
+def _evaluation_subset(images: torch.Tensor, limit: int, seed: int) -> torch.Tensor:
+    if not limit or limit >= len(images):
+        return torch.arange(len(images))
+    generator = torch.Generator().manual_seed(seed)
+    return torch.randperm(len(images), generator=generator)[:limit].sort().values
+
+
+def _student_logits(
+    model: torch.nn.Module,
+    images: Sequence[torch.Tensor],
+    batch_size: int,
+    device: torch.device,
+) -> list[torch.Tensor]:
+    return [predict_logits(model, item, batch_size=batch_size, device=device) for item in images]
+
+
+def run_scrub(raw_config: dict[str, Any]) -> dict[str, Any]:
+    config = _config(raw_config)
+    config["maximize_epochs"] = int(config["maximize_epochs"] or config["epochs"])
+    config["eval_every"] = max(1, int(config["eval_every"]))
+    data_dir = Path(config["data_dir"])
+    output_dir = Path(config["output_dir"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    random.seed(config["seed"])
+    np.random.seed(config["seed"])
+    torch.manual_seed(config["seed"])
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(config["seed"])
+
+    started = time.time()
+    print(f"device={device} output={output_dir}", flush=True)
+
+    teacher = load_model(data_dir / MODEL_FILENAME, device="cpu")
+    student = copy.deepcopy(teacher)
+    teacher = teacher.to(device).eval()
+    student = student.to(device)
+    for parameter in teacher.parameters():
+        parameter.requires_grad_(False)
+    trainable_names = _set_trainable(student, int(config["unfreeze_blocks"]))
+    trainable = [parameter for parameter in student.parameters() if parameter.requires_grad]
+    if not trainable:
+        raise RuntimeError("no trainable parameters; check unfreeze_blocks")
+    initial = {name: parameter.detach().clone() for name, parameter in student.named_parameters() if parameter.requires_grad}
+
+    all_forget = load_forget_images(data_dir / FORGET_FILENAME)
+    if config["train_limit"]:
+        all_forget = all_forget[: int(config["train_limit"])]
+    all_teacher_logits = predict_logits(teacher, all_forget, batch_size=config["eval_batch_size"], device=device)
+    all_pseudo_labels = all_teacher_logits.argmax(dim=-1)
+    if config["freeze_empty_head_rows"]:
+        class_counts = torch.bincount(all_pseudo_labels.long(), minlength=NUM_CLASSES)
+        _freeze_empty_head_rows(student, class_counts)
+
+    holdout_images = holdout_labels = None
+    holdout_retain_images = holdout_retain_labels = None
+    holdout_eval_images = holdout_eval_labels = None
+    holdout_fraction = float(config["selectivity_holdout"])
+    if holdout_fraction > 0:
+        if not 0 < holdout_fraction < 1:
+            raise ValueError("selectivity_holdout must be between 0 and 1")
+        split_generator = torch.Generator().manual_seed(int(config["seed"]) + 99)
+        permutation = torch.randperm(len(all_forget), generator=split_generator)
+        holdout_count = max(2, int(len(all_forget) * holdout_fraction))
+        holdout_indices = permutation[:holdout_count]
+        train_indices = permutation[holdout_count:]
+
+        retain_count = int(holdout_count * float(config["holdout_retain_fraction"]))
+        retain_count = min(max(1, retain_count), holdout_count - 1)
+        retain_indices = holdout_indices[:retain_count]
+        eval_indices = holdout_indices[retain_count:]
+
+        forget_images = all_forget[train_indices]
+        pseudo_labels = all_pseudo_labels[train_indices]
+        holdout_images = all_forget[holdout_indices]
+        holdout_labels = all_pseudo_labels[holdout_indices]
+        holdout_retain_images = all_forget[retain_indices]
+        holdout_retain_labels = all_pseudo_labels[retain_indices]
+        holdout_eval_images = all_forget[eval_indices]
+        holdout_eval_labels = all_pseudo_labels[eval_indices]
+        print(
+            f"selectivity holdout: {len(holdout_retain_images)} images for retain supervision, "
+            f"{len(holdout_eval_images)} held out for evaluation, "
+            f"{len(forget_images)} used for forgetting",
+            flush=True,
+        )
+    else:
+        forget_images = all_forget
+        pseudo_labels = all_pseudo_labels
+
+    print(f"forget images: {len(forget_images)}; trainable tensors: {len(trainable)}", flush=True)
+    torch.save(pseudo_labels, output_dir / "pseudo_labels.pt")
+
+    # Fixed evaluation subset, reused every epoch so scores are comparable.
+    subset = _evaluation_subset(forget_images, int(config["eval_limit"]), int(config["seed"]))
+    eval_images = forget_images[subset]
+    eval_labels = pseudo_labels[subset]
+    variants = tuple(config["aug_variants"] or DEFAULT_VARIANTS)
+    eval_altered = build_altered_by_variant(
+        eval_images, variants=variants, seed=int(config["seed"]) + 17, progress=True
+    )
+    eval_target = build_target_copy(eval_images, seed=int(config["seed"]) + 31, progress=True)
+    orig_eval_clean = predict_logits(teacher, eval_images, batch_size=config["eval_batch_size"], device=device)
+    orig_eval_altered = [predict_logits(teacher, item, batch_size=config["eval_batch_size"], device=device) for item in eval_altered]
+    orig_eval_target = predict_logits(teacher, eval_target, batch_size=config["eval_batch_size"], device=device)
+    print(f"evaluation set: {len(eval_images)} clean, {len(eval_altered)} variants", flush=True)
+
+    aux = _load_optional_npz(config["aux_npz"], int(config["aux_limit"])) if config["aux_npz"] else None
+    aux_images = aux[0] if aux else None
+    aux_labels = aux[1] if aux else None
+    aux_class_map = _load_class_map(config["aux_class_map"]) if config["aux_class_map"] else None
+
+    if holdout_eval_images is not None:
+        # The held-out forget images are in-distribution and labelled with the original
+        # model's argmax, so they measure selectivity much better than an external set.
+        aux_images = holdout_eval_images
+        aux_labels = holdout_eval_labels
+        aux_class_map = list(range(NUM_CLASSES))
+        print("retain proxy: selectivity holdout (in-distribution, original pseudo-labels)", flush=True)
+
+    orig_aux = (
+        predict_logits(teacher, aux_images, batch_size=config["eval_batch_size"], device=device)
+        if aux_images is not None
+        else None
+    )
+
+    retain_data = _load_optional_npz(config["retain_npz"], int(config["retain_limit"])) if config["retain_npz"] else None
+    retain_images = retain_data[0] if retain_data else None
+    retain_labels = retain_data[1] if retain_data else None
+
+    if holdout_retain_images is not None and not config["retain_npz"]:
+        # SCRUB's retain term, using the in-distribution holdout as the retain set.
+        retain_images = holdout_retain_images
+        retain_labels = holdout_retain_labels
+        print(
+            f"retain supervision: {len(retain_images)} selectivity-holdout images, "
+            f"objective={config['retain_objective']}, "
+            f"repeated {int(config['retain_repeat'])}x per epoch",
+            flush=True,
+        )
+
+    if config["retain_objective"] == "ce" and retain_labels is None:
+        print("retain_objective=ce but no retain labels; falling back to KL", flush=True)
+        config["retain_objective"] = "kl"
+
+    # Metric-matching target: the original model's distribution on a strong alteration
+    # of every forget image. Unlike raw KL ascent this is bounded, so it cannot diverge.
+    match_target_probs = match_target_ce_mean = match_target_ce_std = None
+    if config["forget_objective"] == "match":
+        train_target = build_target_copy(forget_images, seed=int(config["seed"]) + 51, progress=True)
+        train_target_logits = predict_logits(
+            teacher, train_target, batch_size=config["eval_batch_size"], device=device
+        )
+        match_target_probs = softmax_temperature(train_target_logits, float(config["match_temp"])).to(device)
+        target_ce = per_sample_ce(train_target_logits, pseudo_labels)
+        match_target_ce_mean = float(target_ce.mean())
+        match_target_ce_std = float(target_ce.std(unbiased=False))
+        print(
+            f"match target: CE mean={match_target_ce_mean:.3f} std={match_target_ce_std:.3f}",
+            flush=True,
+        )
+
+    cap_target_ce_mean = float(per_sample_ce(orig_eval_target, eval_labels).mean())
+
+    batch_size = int(config["batch_size"])
+    total_batches = (len(forget_images) + batch_size - 1) // batch_size
+    max_steps = int(config["max_steps_per_epoch"])
+    if max_steps:
+        total_batches = min(total_batches, max_steps)
+    total_steps = max(1, int(config["epochs"]) * total_batches)
+
+    optimizer = torch.optim.AdamW(trainable, lr=config["lr"], weight_decay=config["weight_decay"])
+    scheduler = (
+        torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps)
+        if config["scheduler"] == "cosine"
+        else None
+    )
+    generator = torch.Generator().manual_seed(int(config["seed"]))
+
+    retain_cycle = None
+    if retain_images is not None and int(config["retain_every"]) > 0:
+        retain_batches = list(
+            _batches(retain_images, int(config["batch_size"]), shuffle=True, generator=generator)
+        )
+        retain_cycle = itertools.cycle(retain_batches)
+        print(
+            f"interleaved retain: {len(retain_batches)} batches, one retain step every "
+            f"{int(config['retain_every'])} forget step(s)",
+            flush=True,
+        )
+
+    def retain_step(indices: torch.Tensor, images: torch.Tensor) -> float | None:
+        inputs = preprocess(images, device)
+        student_logits = student(inputs)
+        with torch.no_grad():
+            teacher_logits_batch = teacher(inputs)
+        kl = _kl_teacher_student(student_logits, teacher_logits_batch, config["kd_temp"])
+        loss = config["retain_alpha"] * kl
+        if config["retain_objective"] == "ce" and retain_labels is not None:
+            labels = retain_labels[indices].to(device)
+            loss = loss + config["retain_gamma"] * F.cross_entropy(student_logits, labels)
+        loss = loss + config["anchor"] * _l2sp(student, initial)
+        if not torch.isfinite(loss):
+            optimizer.zero_grad(set_to_none=True)
+            return None
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        if config["grad_clip"]:
+            torch.nn.utils.clip_grad_norm_(trainable, float(config["grad_clip"]))
+        optimizer.step()
+        return float(loss.detach())
+
+    def evaluate(current_student: torch.nn.Module) -> dict[str, Any]:
+        sub_altered = _student_logits(current_student, eval_altered, config["eval_batch_size"], device)
+        sub_aux = (
+            predict_logits(current_student, aux_images, batch_size=config["eval_batch_size"], device=device)
+            if aux_images is not None
+            else None
+        )
+        return evaluate_logits(
+            orig_clean=orig_eval_clean,
+            sub_clean=predict_logits(current_student, eval_images, batch_size=config["eval_batch_size"], device=device),
+            labels=eval_labels,
+            orig_alterations=orig_eval_altered,
+            sub_alterations=sub_altered,
+            orig_target=orig_eval_target,
+            aux_orig=orig_aux,
+            aux_sub=sub_aux,
+            aux_labels=aux_labels,
+            aux_class_map=aux_class_map,
+            labels_source="original_argmax",
+        )
+
+    metrics_path = output_dir / "metrics.jsonl"
+    metrics_path.write_text("")
+    history: list[dict[str, Any]] = []
+
+    baseline_report = evaluate(student)
+    baseline_scores = flatten_scores(baseline_report)
+    baseline_state = {name: tensor.detach().cpu().float().clone() for name, tensor in student.state_dict().items()}
+    best: dict[str, Any] = {
+        "score": baseline_scores.get("proxy_score", 0.0),
+        "epoch": 0,
+        "step": 0,
+        "state": baseline_state,
+        "report": baseline_report,
+    }
+    torch.save(baseline_state, output_dir / "best.pt")
+    (output_dir / "best_eval.json").write_text(json.dumps(baseline_report, indent=2))
+    print(f"baseline proxy: {json.dumps(baseline_scores, sort_keys=True)}", flush=True)
+
+    def consider(report: dict[str, Any], epoch: int, step: int) -> dict[str, float]:
+        scores = flatten_scores(report)
+        retain = scores.get("retain_score")
+        floor = float(config["min_retain_score"])
+        if floor and retain is not None and retain < floor:
+            print(
+                f"epoch {epoch} step {step}: retain {retain:.4f} below floor {floor:.4f}; not selected",
+                flush=True,
+            )
+            return scores
+        accuracy = scores.get("retain_acc_sub")
+        accuracy_floor = float(config["min_retain_accuracy"])
+        if accuracy_floor and accuracy is not None and 0 <= accuracy < accuracy_floor:
+            print(
+                f"epoch {epoch} step {step}: holdout accuracy {accuracy:.4f} below "
+                f"floor {accuracy_floor:.4f}; not selected",
+                flush=True,
+            )
+            return scores
+        if scores.get("proxy_score", -math.inf) > best["score"]:
+            best.update(
+                score=scores["proxy_score"],
+                epoch=epoch,
+                step=step,
+                state={name: tensor.detach().cpu().float().clone() for name, tensor in student.state_dict().items()},
+                report=report,
+            )
+            torch.save(best["state"], output_dir / "best.pt")
+            (output_dir / "best_eval.json").write_text(json.dumps(report, indent=2))
+            print(f"new best at epoch {epoch} step {step}: {best['score']:.4f}", flush=True)
+        return scores
+
+    ascent_stopped = False
+    for epoch in range(1, int(config["epochs"]) + 1):
+        epoch_started = time.time()
+        student.train()
+        forget_losses: list[float] = []
+        retain_losses: list[float] = []
+        nonfinite = 0
+        steps = 0
+
+        if epoch <= int(config["maximize_epochs"]) and not ascent_stopped:
+            for indices, images in _batches(
+                forget_images,
+                int(config["batch_size"]),
+                shuffle=True,
+                generator=generator,
+                max_steps=int(config["max_steps_per_epoch"]),
+            ):
+                inputs = preprocess(images, device)
+                student_logits = student(inputs)
+                labels = pseudo_labels[indices].to(device)
+
+                if config["forget_objective"] == "match":
+                    target_probs = match_target_probs[indices]
+                    temperature = float(config["match_temp"])
+                    log_student = F.log_softmax(student_logits / temperature, dim=-1)
+                    kl = F.kl_div(log_student, target_probs, reduction="batchmean") * temperature**2
+                    ce = F.cross_entropy(student_logits, labels, reduction="none")
+                    stats_penalty = (ce.mean() - match_target_ce_mean).pow(2) + (
+                        ce.std(unbiased=False) - match_target_ce_std
+                    ).pow(2)
+                    forget_loss = (
+                        config["match_kl_weight"] * kl + config["match_stats_weight"] * stats_penalty
+                    )
+                elif config["forget_objective"] == "ce":
+                    forget_loss = -F.cross_entropy(student_logits, labels)
+                else:
+                    with torch.no_grad():
+                        teacher_logits_batch = teacher(inputs)
+                    forget_loss = -_kl_teacher_student(student_logits, teacher_logits_batch, config["kd_temp"])
+
+                ce_now = float(F.cross_entropy(student_logits.detach(), labels).mean())
+                cap_abs = float(config["forget_loss_cap_abs"])
+                if cap_abs and ce_now > cap_abs:
+                    ascent_stopped = True
+                    print(
+                        f"epoch {epoch} step {steps + 1}: CE {ce_now:.3f} exceeded absolute cap "
+                        f"{cap_abs:.3f}; stopping ascent",
+                        flush=True,
+                    )
+                    break
+                if config["forget_loss_cap"] and ce_now > cap_target_ce_mean * float(config["forget_loss_cap"]):
+                    ascent_stopped = True
+                    print(
+                        f"epoch {epoch} step {steps + 1}: CE {ce_now:.3f} exceeded cap "
+                        f"{cap_target_ce_mean * float(config['forget_loss_cap']):.3f}; stopping ascent",
+                        flush=True,
+                    )
+                    break
+
+                loss = forget_loss + config["anchor"] * _l2sp(student, initial)
+                if not torch.isfinite(loss):
+                    nonfinite += 1
+                    optimizer.zero_grad(set_to_none=True)
+                    continue
+                optimizer.zero_grad(set_to_none=True)
+                loss.backward()
+                if config["grad_clip"]:
+                    torch.nn.utils.clip_grad_norm_(trainable, float(config["grad_clip"]))
+                optimizer.step()
+                if scheduler is not None:
+                    scheduler.step()
+                forget_losses.append(float(forget_loss.detach()))
+                steps += 1
+
+                if retain_cycle is not None and steps % int(config["retain_every"]) == 0:
+                    retain_indices, retain_batch = next(retain_cycle)
+                    value = retain_step(retain_indices, retain_batch)
+                    if value is None:
+                        nonfinite += 1
+                    else:
+                        retain_losses.append(value)
+
+                if config["eval_steps"] and steps % int(config["eval_steps"]) == 0:
+                    student.eval()
+                    mid_scores = consider(evaluate(student), epoch, steps)
+                    agreement = mid_scores.get("retain_agreement", 1.0)
+                    if config["retain_min_agreement"] and agreement < float(config["retain_min_agreement"]):
+                        ascent_stopped = True
+                        print(
+                            f"epoch {epoch} step {steps}: aux agreement {agreement:.3f} below "
+                            f"{float(config['retain_min_agreement']):.3f}; stopping ascent",
+                            flush=True,
+                        )
+                        student.train()
+                        break
+                    student.train()
+
+                save_steps = int(config["save_every_steps"])
+                if save_steps and steps % save_steps == 0:
+                    checkpoint = output_dir / f"step-{steps:04d}.pt"
+                    torch.save(
+                        {
+                            name: tensor.detach().cpu().float().clone()
+                            for name, tensor in student.state_dict().items()
+                        },
+                        checkpoint,
+                    )
+                    print(f"saved {checkpoint}", flush=True)
+
+                log_every = int(config["log_every"] or 0)
+                if log_every and steps % log_every == 0:
+                    retain_part = f" retain {retain_losses[-1]:.4f}" if retain_losses else ""
+                    print(
+                        f"epoch {epoch} step {steps}/{total_batches} "
+                        f"loss {forget_losses[-1]:.4f} ce {ce_now:.4f}{retain_part} "
+                        f"lr {optimizer.param_groups[0]['lr']:.2e} "
+                        f"elapsed {time.time() - epoch_started:.1f}s",
+                        flush=True,
+                    )
+
+        if retain_images is not None and not ascent_stopped and retain_cycle is None:
+            for _ in range(max(1, int(config["retain_repeat"]))):
+                for indices, images in _batches(
+                    retain_images,
+                    int(config["batch_size"]),
+                    shuffle=True,
+                    generator=generator,
+                    max_steps=int(config["max_steps_per_epoch"]),
+                ):
+                    value = retain_step(indices, images)
+                    if value is None:
+                        nonfinite += 1
+                    else:
+                        retain_losses.append(value)
+
+        student.eval()
+        report = evaluate(student) if epoch % int(config["eval_every"]) == 0 else None
+        scores = consider(report, epoch, steps) if report is not None else {}
+        elapsed = time.time() - epoch_started
+        row = {
+            "epoch": epoch,
+            "lr": optimizer.param_groups[0]["lr"],
+            "steps": steps,
+            "retain_steps": len(retain_losses),
+            "forget_loss_mean": float(np.mean(forget_losses)) if forget_losses else None,
+            "retain_loss_mean": float(np.mean(retain_losses)) if retain_losses else None,
+            "nonfinite_steps": nonfinite,
+            "stopped_early": ascent_stopped,
+            "cap_target_ce_mean": cap_target_ce_mean,
+            "seconds": round(elapsed, 2),
+            "scores": scores,
+        }
+        history.append(row)
+        with metrics_path.open("a") as handle:
+            handle.write(json.dumps(row) + "\n")
+        print(f"epoch {epoch}: {json.dumps(scores, sort_keys=True)}", flush=True)
+
+        if config["save_every"]:
+            torch.save(
+                {name: tensor.detach().cpu().float() for name, tensor in student.state_dict().items()},
+                output_dir / f"epoch-{epoch:03d}.pt",
+            )
+        if ascent_stopped:
+            break
+
+    final_state = {name: tensor.detach().cpu().float() for name, tensor in student.state_dict().items()}
+    torch.save(final_state, output_dir / "last.pt")
+
+    submission_path = output_dir / "submission.pt"
+    torch.save(best["state"], submission_path)
+    reference_path = data_dir / MODEL_FILENAME
+    reference = load_state_dict(reference_path) if reference_path.is_file() else None
+    validation = validate_submission(submission_path, reference=reference)
+
+    summary = {
+        "config": config,
+        "device": str(device),
+        "trainable_tensors": len(trainable),
+        "trainable_names": trainable_names,
+        "baseline_scores": baseline_scores,
+        "history": history,
+        "match_target": {
+            "ce_mean": match_target_ce_mean,
+            "ce_std": match_target_ce_std,
+        },
+        "selectivity": {
+            "fraction": float(config["selectivity_holdout"]),
+            "holdout_images": int(len(holdout_images)) if holdout_images is not None else 0,
+            "forget_images": int(len(forget_images)),
+        },
+        "retain_supervision": {
+            "source": (
+                "selectivity_train"
+                if holdout_retain_images is not None and not config["retain_npz"]
+                else ("npz" if config["retain_npz"] else "anchor-only")
+            ),
+            "images": int(len(retain_images)) if retain_images is not None else 0,
+            "repeat": int(config["retain_repeat"]),
+            "every": int(config["retain_every"]),
+            "objective": config["retain_objective"],
+        },
+        "best": {
+            "epoch": best["epoch"],
+            "step": best["step"],
+            "proxy_score": best["score"],
+            "eval": best["report"],
+        },
+        "submission": validation,
+        "seconds": round(time.time() - started, 2),
+    }
+    (output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
+    print(f"saved {submission_path} ({validation['megabytes']} MB, ok={validation['ok']})", flush=True)
+    return summary
+
+
+def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", default="", help="optional JSON file with trainer settings")
+    parser.add_argument("--data-dir", default=None)
+    parser.add_argument("--output-dir", default=None)
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--maximize-epochs", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--eval-batch-size", type=int, default=None)
+    parser.add_argument("--lr", type=float, default=None)
+    parser.add_argument("--weight-decay", type=float, default=None)
+    parser.add_argument("--kd-temp", type=float, default=None)
+    parser.add_argument("--anchor", type=float, default=None)
+    parser.add_argument("--forget-objective", choices=["kl", "ce", "match"], default=None)
+    parser.add_argument("--match-kl-weight", type=float, default=None)
+    parser.add_argument("--match-stats-weight", type=float, default=None)
+    parser.add_argument("--match-temp", type=float, default=None)
+    parser.add_argument("--eval-steps", type=int, default=None)
+    parser.add_argument("--forget-loss-cap", type=float, default=None)
+    parser.add_argument("--forget-loss-cap-abs", type=float, default=None)
+    parser.add_argument("--retain-min-agreement", type=float, default=None)
+    parser.add_argument("--min-retain-score", type=float, default=None)
+    parser.add_argument("--min-retain-accuracy", type=float, default=None)
+    parser.add_argument("--selectivity-holdout", type=float, default=None)
+    parser.add_argument("--holdout-retain-fraction", type=float, default=None)
+    parser.add_argument("--retain-repeat", type=int, default=None)
+    parser.add_argument("--retain-every", type=int, default=None)
+    parser.add_argument("--retain-npz", default=None)
+    parser.add_argument("--retain-objective", choices=["kl", "ce"], default=None)
+    parser.add_argument("--retain-alpha", type=float, default=None)
+    parser.add_argument("--retain-gamma", type=float, default=None)
+    parser.add_argument("--retain-limit", type=int, default=None)
+    parser.add_argument("--unfreeze-blocks", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--eval-every", type=int, default=None)
+    parser.add_argument("--eval-limit", type=int, default=None)
+    parser.add_argument("--aug-variants", default=None, help="comma-separated; empty uses defaults")
+    parser.add_argument("--max-steps-per-epoch", type=int, default=None)
+    parser.add_argument("--grad-clip", type=float, default=None)
+    parser.add_argument("--scheduler", choices=["none", "cosine"], default=None)
+    parser.add_argument("--save-every", action="store_true", default=None)
+    parser.add_argument("--save-every-steps", type=int, default=None)
+    parser.add_argument("--freeze-empty-head-rows", action="store_true", default=None)
+    parser.add_argument("--log-every", type=int, default=None)
+    parser.add_argument("--train-limit", type=int, default=None)
+    parser.add_argument("--aux-npz", default=None)
+    parser.add_argument("--aux-class-map", default=None)
+    parser.add_argument("--aux-limit", type=int, default=None)
+    args = parser.parse_args()
+
+    config: dict[str, Any] = {}
+    if args.config:
+        config.update(json.loads(Path(args.config).read_text()))
+    for key, value in vars(args).items():
+        if key == "config" or value is None:
+            continue
+        config[key] = value
+    if "aug_variants" in config and isinstance(config["aug_variants"], str):
+        parsed = [item.strip() for item in config["aug_variants"].split(",") if item.strip()]
+        if parsed:
+            config["aug_variants"] = parsed
+        else:
+            del config["aug_variants"]
+
+    summary = run_scrub(config)
+    print(
+        json.dumps(
+            {
+                "best_epoch": summary["best"]["epoch"],
+                "proxy_score": summary["best"]["proxy_score"],
+                "submission": summary["submission"],
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,61 @@
+{
+  "source": "/Users/renu_malik/Desktop/coding_projects/hackathons/POC_hackathon/model-equality/proxy/catalog.jsonl",
+  "captured_models": 18,
+  "positives_model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+  "can_supply_hard_negatives": false,
+  "models": [
+    {
+      "alias": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "family": "deepseek",
+      "quant": "default",
+      "capabilities": [
+        "vision",
+        "reasoning"
+      ]
+    },
+    {
+      "alias": "zai-org/GLM-5.3",
+      "family": "glm",
+      "quant": "default",
+      "capabilities": [
+        "reasoning",
+        "enhanced_structured_generation"
+      ]
+    },
+    {
+      "alias": "Qwen/Qwen3.8-27B-FP8",
+      "family": "qwen",
+      "quant": "fp8",
+      "capabilities": [
+        "reasoning",
+        "vision"
+      ]
+    },
+    {
+      "alias": "moonshotai/Kimi-K3.1-Pro",
+      "family": "kimi",
+      "quant": "default",
+      "capabilities": [
+        "reasoning",
+        "vision"
+      ]
+    },
+    {
+      "alias": "meta/muse-spark-open",
+      "family": "meta",
+      "quant": "default",
+      "capabilities": [
+        "reasoning"
+      ]
+    },
+    {
+      "alias": "google/gemma-4-31B-it",
+      "family": "gemma",
+      "quant": "default",
+      "capabilities": [
+        "vision",
+        "reasoning"
+      ]
+    }
+  ]
+}
