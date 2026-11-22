@@ -1,0 +1,28 @@
+real group: trustmark mostly watermarked, n=87, 100 bits
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/trustmark/trustmark.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(weight_path, map_location=torch.device('cpu'))
+decoder input: (245, 245), resize 'bilinear' antialias=True, channels [0, 1, 2], scale [2.0, 2.0, 2.0], offset [-1.0, -1.0, -1.0], fit error 0.0000
+start from the decoder weights
+pool: reusing cache_synth_trustmark/
+pool on cuda: 2754 photos, 6.1 GB (clean, current, previous), loaded in 9s
+embedding check: kit decoder reads the cached pool at 1.000 and my fresh embeddings at 1.000 (both about 0.97+); embedder speed 18 images/s
+
+=== training 40 min: batch 32, 50% of the time embedding fresh messages, windows 15%, decoy holes 15%, wrong message 10%, bit loss 0.5 ===
+  score to beat on REAL: 0.578. At start: bit acc about 0.97, REAL low (the mask head is new).
+  Healthy run: REAL rises past the reference, share stays near 0.9, bit acc stays high, msg-map AUC rises.
+[start ] loss nan | synthetic 0.454 | REAL 0.448 (thr 0.50, share 1.00) | wrong-msg share 1.00 | msg-map AUC 0.651 (wrong msg 0.476) | bit acc real 0.975 synthetic 0.980
+[   5 min] 69k views (461 img/s while training) | 10.7k fresh embeddings (71/s, 6.5 views each) | loss 1.046 | synthetic 0.645 | REAL 0.495 (thr 0.05, share 0.79) | wrong-msg share 0.23 | msg-map AUC 0.685 (wrong msg 0.488) | bit acc real 0.780 synthetic 0.932
+[  10 min] 139k views (463 img/s while training) | 21.4k fresh embeddings (71/s, 6.5 views each) | loss 0.918 | synthetic 0.659 | REAL 0.466 (thr 0.05, share 0.73) | wrong-msg share 0.14 | msg-map AUC 0.682 (wrong msg 0.492) | bit acc real 0.785 synthetic 0.962
+[  15 min] 209k views (464 img/s while training) | 32.1k fresh embeddings (71/s, 6.5 views each) | loss 0.876 | synthetic 0.667 | REAL 0.417 (thr 0.05, share 0.65) | wrong-msg share 0.05 | msg-map AUC 0.695 (wrong msg 0.516) | bit acc real 0.787 synthetic 0.973
+[  20 min] 278k views (464 img/s while training) | 42.7k fresh embeddings (71/s, 6.5 views each) | loss 0.837 | synthetic 0.676 | REAL 0.402 (thr 0.05, share 0.62) | wrong-msg share 0.08 | msg-map AUC 0.695 (wrong msg 0.524) | bit acc real 0.786 synthetic 0.974
+[  25 min] 348k views (464 img/s while training) | 53.3k fresh embeddings (71/s, 6.5 views each) | loss 0.807 | synthetic 0.684 | REAL 0.391 (thr 0.05, share 0.59) | wrong-msg share 0.06 | msg-map AUC 0.685 (wrong msg 0.502) | bit acc real 0.777 synthetic 0.981
+[  30 min] 418k views (464 img/s while training) | 63.9k fresh embeddings (71/s, 6.5 views each) | loss 0.783 | synthetic 0.687 | REAL 0.393 (thr 0.05, share 0.61) | wrong-msg share 0.05 | msg-map AUC 0.680 (wrong msg 0.505) | bit acc real 0.786 synthetic 0.987
+[  35 min] 487k views (464 img/s while training) | 74.5k fresh embeddings (71/s, 6.5 views each) | loss 0.765 | synthetic 0.694 | REAL 0.385 (thr 0.05, share 0.57) | wrong-msg share 0.05 | msg-map AUC 0.685 (wrong msg 0.500) | bit acc real 0.782 synthetic 0.988
+[  40 min] 557k views (464 img/s while training) | 85.1k fresh embeddings (71/s, 6.5 views each) | loss 0.756 | synthetic 0.694 | REAL 0.392 (thr 0.05, share 0.59) | wrong-msg share 0.05 | msg-map AUC 0.682 (wrong msg 0.502) | bit acc real 0.790 synthetic 0.988
+
+=== RESULT (trustmark mostly watermarked, n=87) ===
+  REAL at the end 0.392, best during the run 0.495   (7b: 0.578; rule: last two evaluations >= 0.598)
+  score rule: FAIL   wrong-message rule (share <= 0.05): FAIL   share rule (true message >= 0.8): FAIL
+  Keep 7b. Paste me this log.
+  wrote submission_test5_trustmark_a.pt: 177 trustmark mostly-watermarked test masks replaced (threshold 0.05)
+  predicted watermarked share on test: 0.519 (expect about 0.9)   with a wrong message: 0.039 (expect near 0)

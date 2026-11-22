@@ -1,0 +1,81 @@
+nohup: ignoring input
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step4_rect.py:34: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  d = torch.load("analysis_oof.pt")
+=== 1/3 rectangle search on 169 train images (mostly clean, PixelSeal + TrustMark) ===
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/rect_search.py:118: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  cache = torch.load(path) if os.path.exists(path) else {}
+[WARN]: `ffmpeg-python` not available, `SimpleVideoDataset` class will not be usable. Install it by `pip install ffmpeg-python`.
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+Model loaded successfully from /p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/models/pixelseal/checkpoint.pth with message: <All keys matched successfully>
+  train pixelseal: 10/66  (18.8s per image, ~18 min left for this part)
+  train pixelseal: 20/66  (11.4s per image, ~9 min left for this part)
+  train pixelseal: 30/66  (10.7s per image, ~6 min left for this part)
+  train pixelseal: 40/66  (10.2s per image, ~4 min left for this part)
+  train pixelseal: 50/66  (9.8s per image, ~3 min left for this part)
+  train pixelseal: 60/66  (8.8s per image, ~1 min left for this part)
+  train pixelseal: 66/66  (8.4s per image, ~0 min left for this part)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/rect_search.py:118: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  cache = torch.load(path) if os.path.exists(path) else {}
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/trustmark/trustmark.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(weight_path, map_location=torch.device('cpu'))
+  train trustmark: 10/67  (1.6s per image, ~1 min left for this part)
+  train trustmark: 20/67  (1.6s per image, ~1 min left for this part)
+  train trustmark: 30/67  (1.6s per image, ~1 min left for this part)
+  train trustmark: 40/67  (1.6s per image, ~1 min left for this part)
+  train trustmark: 50/67  (1.6s per image, ~0 min left for this part)
+  train trustmark: 60/67  (1.6s per image, ~0 min left for this part)
+  train trustmark: 67/67  (1.6s per image, ~0 min left for this part)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/rect_search.py:118: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  cache = torch.load(path) if os.path.exists(path) else {}
+
+=== TRAIN: model vs model + rectangles (mostly clean) ===
+  pixelseal  (86 imgs): model 0.520 -> with rectangles 0.574   T=0.650, rectangle used on 35%
+  trustmark  (83 imgs): model 0.468 -> with rectangles 0.581   T=0.725, rectangle used on 28%
+
+expected change on the overall score: +0.027  (step 3 leaderboard 0.473 -> ~0.500)
+
+=== 2/3 rectangle search on 335 test images ===
+Model loaded successfully from /p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/models/pixelseal/checkpoint.pth with message: <All keys matched successfully>
+  test pixelseal: 10/172  (5.2s per image, ~14 min left for this part)
+  test pixelseal: 20/172  (4.6s per image, ~12 min left for this part)
+  test pixelseal: 30/172  (4.4s per image, ~10 min left for this part)
+  test pixelseal: 40/172  (4.3s per image, ~10 min left for this part)
+  test pixelseal: 50/172  (4.3s per image, ~9 min left for this part)
+  test pixelseal: 60/172  (4.2s per image, ~8 min left for this part)
+  test pixelseal: 70/172  (4.2s per image, ~7 min left for this part)
+  test pixelseal: 80/172  (4.2s per image, ~6 min left for this part)
+  test pixelseal: 90/172  (4.2s per image, ~6 min left for this part)
+  test pixelseal: 100/172  (4.1s per image, ~5 min left for this part)
+  test pixelseal: 110/172  (4.1s per image, ~4 min left for this part)
+  test pixelseal: 120/172  (4.1s per image, ~4 min left for this part)
+  test pixelseal: 130/172  (4.1s per image, ~3 min left for this part)
+  test pixelseal: 140/172  (4.1s per image, ~2 min left for this part)
+  test pixelseal: 150/172  (4.1s per image, ~2 min left for this part)
+  test pixelseal: 160/172  (4.1s per image, ~1 min left for this part)
+  test pixelseal: 170/172  (4.1s per image, ~0 min left for this part)
+  test pixelseal: 172/172  (4.1s per image, ~0 min left for this part)
+  test trustmark: 10/163  (1.6s per image, ~4 min left for this part)
+  test trustmark: 20/163  (1.6s per image, ~4 min left for this part)
+  test trustmark: 30/163  (1.6s per image, ~3 min left for this part)
+  test trustmark: 40/163  (1.6s per image, ~3 min left for this part)
+  test trustmark: 50/163  (1.6s per image, ~3 min left for this part)
+  test trustmark: 60/163  (1.6s per image, ~3 min left for this part)
+  test trustmark: 70/163  (1.6s per image, ~2 min left for this part)
+  test trustmark: 80/163  (1.6s per image, ~2 min left for this part)
+  test trustmark: 90/163  (1.6s per image, ~2 min left for this part)
+  test trustmark: 100/163  (1.6s per image, ~2 min left for this part)
+  test trustmark: 110/163  (1.6s per image, ~1 min left for this part)
+  test trustmark: 120/163  (1.6s per image, ~1 min left for this part)
+  test trustmark: 130/163  (1.6s per image, ~1 min left for this part)
+  test trustmark: 140/163  (1.6s per image, ~1 min left for this part)
+  test trustmark: 150/163  (1.6s per image, ~0 min left for this part)
+  test trustmark: 160/163  (1.6s per image, ~0 min left for this part)
+  test trustmark: 163/163  (1.6s per image, ~0 min left for this part)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step4_rect.py:76: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  sub = torch.load("submission_step3.pt")
+
+=== 3/3 wrote submission_step4.pt: 1020 masks, 108 replaced by a rectangle ===
+Successfully submitted.
+Server response: {'submission_id': 1852, 'status': 'success', 'score': 0.5017, 'previous_best': 0.4726, 'delta': 0.0291, 'improved': True, 'message': 'New best on this task. Score shown is on the public split; the final ranking uses the held out subset, revealed after submissions close.'}
+Submission ID: 1852

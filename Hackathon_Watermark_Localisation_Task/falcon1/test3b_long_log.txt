@@ -1,0 +1,13 @@
+nohup: ignoring input
+real group: trustmark mostly watermarked, n=87, watermarked share 0.90
+hole shapes: 169 real masks (other methods), hole share 0.10
+pool: reusing cache_synth_trustmark/
+
+=== PHASE 1: synthetic pre-training (30 epochs x 1200 images, input hp) ===
+  0.448 = 'everything watermarked'; score to beat: 0.486
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  epoch  1/30  loss 1.299   synthetic 0.455   REAL (no fine-tuning) 0.448   (127s)
+  epoch  2/30  loss 1.027   synthetic 0.455   REAL (no fine-tuning) 0.448   (146s)
+  epoch  3/30  loss 0.923   synthetic 0.456   REAL (no fine-tuning) 0.448   (220s)
+  epoch  4/30  loss 0.866   synthetic 0.466   REAL (no fine-tuning) 0.461   (362s)
+  epoch  5/30  loss 0.873   synthetic 0.460   REAL (no fine-tuning) 0.448   (363s)

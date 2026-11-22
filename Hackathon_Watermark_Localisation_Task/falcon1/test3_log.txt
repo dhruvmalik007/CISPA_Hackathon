@@ -1,0 +1,22 @@
+nohup: ignoring input
+real group: trustmark mostly watermarked, n=87, mask=1 share 0.90 -> label 1 = watermarked
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/trustmark/trustmark.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(weight_path, map_location=torch.device('cpu'))
+covers: 1020 images (other methods, train + test)
+pool: reusing cache_synth_trustmark/
+pool: 2754 training, 246 held-out (unseen covers)
+
+=== REALISM CHECK (synthetic should look like real) ===
+                                synthetic     real
+  bit accuracy, mean                0.963    0.975
+  bit accuracy, 10th pct            0.870    0.936
+  feat AUC                          0.662    0.643
+  watermarked share                 0.872    0.895
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+=== TRAINING on synthetic only (15 epochs x 1200 images, input hp) ===
+  real score to beat (current CV): 0.486
+  epoch  1/15  loss 1.286   synthetic 0.549   REAL 0.448   (142s)
+  epoch  2/15  loss 0.930   synthetic 0.640   REAL 0.448   (143s)
+  epoch  3/15  loss 0.772   synthetic 0.671   REAL 0.448   (155s)
+  epoch  4/15  loss 0.701   synthetic 0.671   REAL 0.450   (144s)

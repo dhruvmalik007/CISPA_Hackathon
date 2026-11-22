@@ -1,0 +1,22 @@
+nohup: ignoring input
+real group: trustmark mostly watermarked, n=87, watermarked share 0.90
+hole shapes: 169 real masks (other methods), hole share 0.10
+pool: reusing cache_synth_trustmark/
+
+=== PHASE 1: synthetic pre-training (8 epochs x 1200 images, input hp) ===
+  0.448 = 'everything watermarked'; score to beat: 0.486
+  reusing test3b_trustmark_pretrained.pt (skipping phase 1)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/test3b_synth.py:151: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  pre = torch.load(ckpt, map_location="cpu")
+
+=== PHASE 2: fine-tuning on real images, 5-fold (20 epochs, lr 0.0001) ===
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  fold 1/5 done
+  fold 2/5 done
+  fold 3/5 done
+  fold 4/5 done
+  fold 5/5 done
+
+=== RESULT (trustmark mostly watermarked, n=87) ===
+  current CV 0.486   ->   synthetic pre-training + real fine-tuning: 0.492  (threshold 0.55)
+  not better than current. Paste me this.

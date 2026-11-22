@@ -1,0 +1,78 @@
+nohup: ignoring input
+computing maps for 510 train images on cuda ...
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step2_shapes.py:99: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  cache = torch.load(path) if os.path.exists(path) else {}
+
+=== TRAIN: best rule per method and kind ===
+  pixelseal  mostly watermarked ( 84 imgs): step1 0.449 -> step2 0.474   rule ('both', 11, -1.5)
+  pixelseal  mostly clean       ( 86 imgs): step1 0.450 -> step2 0.501   rule ('both', 11, 1.5)
+  trustmark  mostly watermarked ( 87 imgs): step1 0.448 -> step2 0.457   rule ('both', 11, -1.0)
+  trustmark  mostly clean       ( 83 imgs): step1 0.454 -> step2 0.469   rule ('both', 11, 1.75)
+  stegastamp mostly watermarked ( 85 imgs): step1 0.455 -> step2 0.476   rule ('rise', 5, -1.25)
+  stegastamp mostly clean       ( 85 imgs): step1 0.463 -> step2 0.469   rule ('rise', 11, 1.75)
+
+TRAIN overall score: 0.474   (step 1 was 0.453)
+Note: rules are tuned on these same train images, so expect the leaderboard to be a bit lower.
+
+computing maps for 1020 test images ...
+[WARN]: `ffmpeg-python` not available, `SimpleVideoDataset` class will not be usable. Install it by `pip install ffmpeg-python`.
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+Model loaded successfully from /p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/models/pixelseal/checkpoint.pth with message: <All keys matched successfully>
+  test pixelseal: 20/340  (0.93s per image)
+  test pixelseal: 40/340  (1.05s per image)
+  test pixelseal: 60/340  (0.91s per image)
+  test pixelseal: 80/340  (0.83s per image)
+  test pixelseal: 100/340  (0.79s per image)
+  test pixelseal: 120/340  (0.76s per image)
+  test pixelseal: 140/340  (0.74s per image)
+  test pixelseal: 160/340  (0.72s per image)
+  test pixelseal: 180/340  (0.71s per image)
+  test pixelseal: 200/340  (0.70s per image)
+  test pixelseal: 220/340  (0.69s per image)
+  test pixelseal: 240/340  (0.69s per image)
+  test pixelseal: 260/340  (0.68s per image)
+  test pixelseal: 280/340  (0.68s per image)
+  test pixelseal: 300/340  (0.67s per image)
+  test pixelseal: 320/340  (0.67s per image)
+  test pixelseal: 340/340  (0.67s per image)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/trustmark/trustmark.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(weight_path, map_location=torch.device('cpu'))
+  test trustmark: 20/340  (0.36s per image)
+  test trustmark: 40/340  (0.35s per image)
+  test trustmark: 60/340  (0.35s per image)
+  test trustmark: 80/340  (0.35s per image)
+  test trustmark: 100/340  (0.35s per image)
+  test trustmark: 120/340  (0.35s per image)
+  test trustmark: 140/340  (0.35s per image)
+  test trustmark: 160/340  (0.35s per image)
+  test trustmark: 180/340  (0.35s per image)
+  test trustmark: 200/340  (0.35s per image)
+  test trustmark: 220/340  (0.35s per image)
+  test trustmark: 240/340  (0.35s per image)
+  test trustmark: 260/340  (0.35s per image)
+  test trustmark: 280/340  (0.35s per image)
+  test trustmark: 300/340  (0.35s per image)
+  test trustmark: 320/340  (0.35s per image)
+  test trustmark: 340/340  (0.35s per image)
+  test stegastamp: 20/340  (1.07s per image)
+  test stegastamp: 40/340  (1.06s per image)
+  test stegastamp: 60/340  (1.05s per image)
+  test stegastamp: 80/340  (1.05s per image)
+  test stegastamp: 100/340  (1.05s per image)
+  test stegastamp: 120/340  (1.05s per image)
+  test stegastamp: 140/340  (1.05s per image)
+  test stegastamp: 160/340  (1.06s per image)
+  test stegastamp: 180/340  (1.11s per image)
+  test stegastamp: 200/340  (1.12s per image)
+  test stegastamp: 220/340  (1.17s per image)
+  test stegastamp: 240/340  (1.18s per image)
+  test stegastamp: 260/340  (1.18s per image)
+  test stegastamp: 280/340  (1.18s per image)
+  test stegastamp: 300/340  (1.24s per image)
+  test stegastamp: 320/340  (1.33s per image)
+  test stegastamp: 340/340  (1.39s per image)
+wrote submission_step2.pt: 1020 masks
+Successfully submitted.
+Server response: {'submission_id': 1628, 'status': 'success', 'score': 0.4576, 'previous_best': 0.4402, 'delta': 0.0173, 'improved': True, 'message': 'New best on this task. Score shown is on the public split; the final ranking uses the held out subset, revealed after submissions close.'}
+Submission ID: 1628

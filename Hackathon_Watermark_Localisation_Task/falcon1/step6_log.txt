@@ -1,0 +1,58 @@
+nohup: ignoring input
+input: hp   encoder: resnet34   epochs: 50
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step3_train.py:30: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  maps.update(torch.load(p))
+methods: ['stegastamp']   train images: 170
+  fold 1/5: training on 136 images
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+    epoch 10/50  loss 0.750
+    epoch 20/50  loss 0.592
+    epoch 30/50  loss 0.445
+    epoch 40/50  loss 0.390
+    epoch 50/50  loss 0.405
+  fold 2/5: training on 136 images
+    epoch 10/50  loss 0.729
+    epoch 20/50  loss 0.627
+    epoch 30/50  loss 0.548
+    epoch 40/50  loss 0.502
+    epoch 50/50  loss 0.413
+  fold 3/5: training on 136 images
+    epoch 10/50  loss 0.708
+    epoch 20/50  loss 0.566
+    epoch 30/50  loss 0.450
+    epoch 40/50  loss 0.433
+    epoch 50/50  loss 0.385
+  fold 4/5: training on 136 images
+    epoch 10/50  loss 0.663
+    epoch 20/50  loss 0.584
+    epoch 30/50  loss 0.441
+    epoch 40/50  loss 0.380
+    epoch 50/50  loss 0.347
+  fold 5/5: training on 136 images
+    epoch 10/50  loss 0.643
+    epoch 20/50  loss 0.574
+    epoch 30/50  loss 0.521
+    epoch 40/50  loss 0.517
+    epoch 50/50  loss 0.387
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step6_stega.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  d = torch.load("analysis_oof.pt")
+
+=== CROSS-VALIDATION (images the model never saw) ===
+  group                              n  current      new   use
+  stegastamp mostly wm              85    0.668    0.718   new
+  stegastamp mostly clean           85    0.596    0.626   new
+
+expected change on the overall score: +0.013
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step6_stega.py:209: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  sub = torch.load(a.base)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/falcon1/step3_train.py:30: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  maps.update(torch.load(p))
+  test predictions 1/5
+  test predictions 2/5
+  test predictions 3/5
+  test predictions 4/5
+  test predictions 5/5
+wrote submission_step6.pt: 1020 masks, 340 replaced (rest from submission_step5.pt)
+Successfully submitted.
+Server response: {'submission_id': 2543, 'status': 'success', 'score': 0.5852, 'previous_best': 0.5803, 'delta': 0.0048, 'improved': True, 'message': 'New best on this task. Score shown is on the public split; the final ranking uses the held out subset, revealed after submissions close.'}
+Submission ID: 2543

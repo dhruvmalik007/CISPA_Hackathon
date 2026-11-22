@@ -1,0 +1,33 @@
+nohup: ignoring input
+real group: trustmark mostly watermarked, n=87
+hole shapes: 169 real masks (other methods)
+/p/scratch/training2666/falcon1/FrenchyFighters/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/trustmark/trustmark.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(weight_path, map_location=torch.device('cpu'))
+decoder input: (245, 245), resize 'bilinear' antialias=True, channels [0, 1, 2], scale [2.0, 2.0, 2.0], offset [-1.0, -1.0, -1.0], fit error 0.0000
+pool: reusing cache_synth_trustmark/
+
+=== PHASE 1: synthetic pre-training, encoder = TrustMark decoder (12 epochs) ===
+  0.448 = 'everything watermarked'; test 3b reached 0.494; score to beat: 0.486
+  epoch  1/12  loss 1.183   synthetic 0.456   REAL (no fine-tuning) 0.450   (134s)
+  epoch  2/12  loss 0.926   synthetic 0.511   REAL (no fine-tuning) 0.508   (141s)
+  epoch  3/12  loss 0.866   synthetic 0.561   REAL (no fine-tuning) 0.543   (237s)
+  epoch  4/12  loss 0.823   synthetic 0.510   REAL (no fine-tuning) 0.494   (233s)
+  epoch  5/12  loss 0.824   synthetic 0.542   REAL (no fine-tuning) 0.535   (207s)
+  epoch  6/12  loss 0.785   synthetic 0.519   REAL (no fine-tuning) 0.515   (200s)
+  epoch  7/12  loss 0.796   synthetic 0.522   REAL (no fine-tuning) 0.518   (181s)
+  epoch  8/12  loss 0.784   synthetic 0.516   REAL (no fine-tuning) 0.519   (88s)
+  epoch  9/12  loss 0.780   synthetic 0.514   REAL (no fine-tuning) 0.522   (83s)
+  epoch 10/12  loss 0.768   synthetic 0.562   REAL (no fine-tuning) 0.554   (80s)
+  epoch 11/12  loss 0.773   synthetic 0.562   REAL (no fine-tuning) 0.554   (80s)
+  epoch 12/12  loss 0.763   synthetic 0.604   REAL (no fine-tuning) 0.578   (79s)
+
+=== PHASE 2: fine-tuning on real images, 5-fold (20 epochs) ===
+  fold 1/5 done
+  fold 2/5 done
+  fold 3/5 done
+  fold 4/5 done
+  fold 5/5 done
+
+=== RESULT (trustmark mostly watermarked, n=87) ===
+  current CV 0.486   ->   decoder-initialised, synthetic + real fine-tuning: 0.547  (threshold 0.90)
+  BETTER: worth submitting. Paste me this.
